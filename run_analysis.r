@@ -24,7 +24,7 @@ str(subjectTrainingData)
 str(subjectTestData)
 str(featuresTestData)
 str(featuresTrainingData)
-#Bind the tables by row
+#Bind the tables by row to merge the training and test data
 dataSubject <- rbind(subjectTrainingData, subjectTestData)
 dataActivity<- rbind(activityTrainingData, activityTestData)
 dataFeatures<- rbind(featuresTrainingData, featuresTestData)
@@ -36,7 +36,7 @@ names(dataFeatures)<- dataFeaturesHeads$V2
 #bind the columns and produce a new data frame
 dataCombine <- cbind(dataSubject, dataActivity)
 Data <- cbind(dataFeatures, dataCombine)
-#features by mean and std dev of each measure
+#extract the measurements for features by mean and std dev of each measure
 subdataFeaturesHeads<-dataFeaturesHeads$V2[grep("mean\\(\\)|std\\(\\)", dataFeaturesHeads$V2)]
 #subset by the selected names of each feature
 selectedNames<-c(as.character(subdataFeaturesHeads), "subjectID", "activityID" )
