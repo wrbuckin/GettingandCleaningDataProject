@@ -1,51 +1,52 @@
-if(!file.exists("./data")){dir.create("./data")}
+# download the files
+if(!file.exists("./GCRdata")){dir.create("./GCRdata")}
 fileUrl <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
 download.file(fileUrl,destfile="./data/Dataset.zip",method="curl")
-
-unzip(zipfile="./data/Dataset.zip",exdir="./data")
-
-path_rf <- file.path("./data" , "UCI HAR Dataset")
-files<-list.files(path_rf, recursive=TRUE)
+#unzip the download
+unzip(zipfile="./GCRdata/Dataset.zip",exdir="./GCRdata")
+#list the files in the zip and set the path
+path_wearable <- file.path("./GCRdata" , "UCI HAR Dataset")
+files<-list.files(path_wearable, recursive=TRUE)
 files
+#read the data
+activityTestData  <- read.table(file.path(path_wearable, "test" , "Y_test.txt" ),header = FALSE)
+activityTrainingData <- read.table(file.path(path_wearable, "train", "Y_train.txt"),header = FALSE)
 
-dataActivityTest  <- read.table(file.path(path_rf, "test" , "Y_test.txt" ),header = FALSE)
-dataActivityTrain <- read.table(file.path(path_rf, "train", "Y_train.txt"),header = FALSE)
+subjectTrainingData <- read.table(file.path(path_wearable, "train", "subject_train.txt"),header = FALSE)
+subjectTestData  <- read.table(file.path(path_wearable, "test" , "subject_test.txt"),header = FALSE)
 
-dataSubjectTrain <- read.table(file.path(path_rf, "train", "subject_train.txt"),header = FALSE)
-dataSubjectTest  <- read.table(file.path(path_rf, "test" , "subject_test.txt"),header = FALSE)
-
-dataFeaturesTest  <- read.table(file.path(path_rf, "test" , "X_test.txt" ),header = FALSE)
-dataFeaturesTrain <- read.table(file.path(path_rf, "train", "X_train.txt"),header = FALSE)
-
-str(dataActivityTest)
-str(dataActivityTrain)
-str(dataSubjectTrain)
-str(dataSubjectTest)
-str(dataFeaturesTest)
-str(dataFeaturesTrain)
-
-dataSubject <- rbind(dataSubjectTrain, dataSubjectTest)
-dataActivity<- rbind(dataActivityTrain, dataActivityTest)
-dataFeatures<- rbind(dataFeaturesTrain, dataFeaturesTest)
-
+featuresTestData  <- read.table(file.path(path_wearable, "test" , "X_test.txt" ),header = FALSE)
+featuresTrainingData <- read.table(file.path(path_wearable, "train", "X_train.txt"),header = FALSE)
+#Examine the data properties for each variable
+str(activityTestData)
+str(activityTrainingData)
+str(subjectTrainingData)
+str(subjectTestData)
+str(featuresTestData)
+str(featuresTrainingData)
+#Bind the tables by row
+dataSubject <- rbind(subjectTrainingData, subjectTestData)
+dataActivity<- rbind(activityTrainingData, activityTestData)
+dataFeatures<- rbind(featuresTrainingData, featuresTestData)
+#establish the names for the variables
 names(dataSubject)<-c("subjectID")
 names(dataActivity)<- c("activityID")
-dataFeaturesNames <- read.table(file.path(path_rf, "features.txt"),head=FALSE)
-names(dataFeatures)<- dataFeaturesNames$V2
-
+dataFeaturesHeads <- read.table(file.path(path_wearable, "features.txt"),head=FALSE)
+names(dataFeatures)<- dataFeaturesHeads$V2
+#bind the columns and produce a new data frame
 dataCombine <- cbind(dataSubject, dataActivity)
 Data <- cbind(dataFeatures, dataCombine)
-
-subdataFeaturesNames<-dataFeaturesNames$V2[grep("mean\\(\\)|std\\(\\)", dataFeaturesNames$V2)]
-
-selectedNames<-c(as.character(subdataFeaturesNames), "subjectID", "activityID" )
+#features by mean and std dev of each measure
+subdataFeaturesHeads<-dataFeaturesHeads$V2[grep("mean\\(\\)|std\\(\\)", dataFeaturesHeads$V2)]
+#subset by the selected names of each feature
+selectedNames<-c(as.character(subdataFeaturesHeads), "subjectID", "activityID" )
 Data<-subset(Data,select=selectedNames)
 
 str(Data)
-
-activityLabels <- read.table(file.path(path_rf, "activity_labels.txt"),header = FALSE)
+#read in the activity names from the file
+activityLabels <- read.table(file.path(path_wearable, "activity_labels.txt"),header = FALSE)
 head(Data$activity,30)
-
+#adjust the names in the dataset
 names(Data)<-gsub("^t", "time", names(Data))
 names(Data)<-gsub("^f", "frequency", names(Data))
 names(Data)<-gsub("Acc", "Accelerometer", names(Data))
@@ -54,9 +55,10 @@ names(Data)<-gsub("Mag", "Magnitude", names(Data))
 names(Data)<-gsub("BodyBody", "Body", names(Data))
 
 names(Data)
-
+#using plyr create the tidy dataset for output
 library(plyr);
 Data2<-aggregate(. ~subjectID + activityID, Data, mean)
 Data2<-Data2[order(Data2$subjectID,Data2$activityID),]
-write.table(Data2, file = "SamsungTidyData.txt",row.name=FALSE)
+#write the output table for the tidy dataset
+write.table(Data2, file = "SamsungSummaryData.txt",row.name=FALSE)
 
